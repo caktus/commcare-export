@@ -1,9 +1,10 @@
 from __future__ import with_statement
 from alembic import context
 from sqlalchemy import create_engine
+from sqlalchemy.schema import MetaData
 
 config = context.config
-target_metadata = None
+target_metadata = MetaData(schema="test")
 
 
 def run_migrations_online():
@@ -19,7 +20,8 @@ def run_migrations_online():
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=target_metadata
+            target_metadata=target_metadata,
+            version_table_schema="test"
         )
 
         with context.begin_transaction():

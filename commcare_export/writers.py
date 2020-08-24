@@ -310,7 +310,7 @@ class SqlMixin(object):
                 raise Exception('Tried to reflect via a closed connection')
             if self.connection.invalidated:
                 raise Exception('Tried to reflect via an invalidated connection')
-            self._metadata = sqlalchemy.MetaData()
+            self._metadata = sqlalchemy.MetaData(schema="test")
             self._metadata.bind = self.connection
             self._metadata.reflect()
         return self._metadata
@@ -450,7 +450,7 @@ class SqlTableWriter(SqlMixin, TableWriter):
             if self.strict_types:
                 create_sql = sqlalchemy.schema.CreateTable(sqlalchemy.Table(
                     table_name,
-                    sqlalchemy.MetaData(),
+                    sqlalchemy.MetaData(schema="test"),
                     *self._get_columns_for_data(row_dict, data_type_dict)
                 )).compile(self.connection.engine)
                 logger.warning("Table '{table_name}' does not exist. Creating table with:\n{schema}".format(
