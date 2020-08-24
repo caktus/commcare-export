@@ -8,6 +8,7 @@ import alembic
 import csv342 as csv
 import six
 import sqlalchemy
+from sqlalchemy import event
 from six import u
 
 from commcare_export.data_types import UnknownDataType, get_sqlalchemy_type
@@ -62,7 +63,7 @@ class TableWriter(object):
 
     def __enter__(self):
         return self
-    
+
     def write_table(self, table):
         "{'name': str, 'headings': [str], 'rows': [[str]]} -> ()"
         raise NotImplementedError()
@@ -78,7 +79,7 @@ class CsvTableWriter(TableWriter):
         self.file = file
         self.tables = []
         self.archive = None
-        
+
     def __enter__(self):
         self.archive = zipfile.ZipFile(self.file, 'w', zipfile.ZIP_DEFLATED)
         return self
@@ -113,7 +114,7 @@ class CsvTableWriter(TableWriter):
 
 class Excel2007TableWriter(TableWriter):
     max_table_name_size = 31
-    
+
     def __init__(self, file):
         try:
             import openpyxl
@@ -187,7 +188,7 @@ class Excel2003TableWriter(TableWriter):
             self.sheets[name] = (sheet, 1) # start from row 1
 
         return self.sheets[name]
-        
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.book.save(self.file)
 
@@ -199,7 +200,7 @@ class JValueTableWriter(TableWriter):
 
     def __init__(self):
         self.tables = {}
-    
+
     def write_table(self, table):
         if table.name not in self.tables:
             self.tables[table.name] = TableSpec(
@@ -224,7 +225,7 @@ class StreamingMarkdownTableWriter(TableWriter):
     def __init__(self, output_stream, compute_widths=False):
         self.output_stream = output_stream
         self.compute_widths = compute_widths
-    
+
     def write_table(self, table, ):
         col_widths = None
         if self.compute_widths:
@@ -251,12 +252,19 @@ class StreamingMarkdownTableWriter(TableWriter):
         return list(col_widths)
 
 
+def set_schema_listener(engine):
+    @event.listens_for(engine, "connect")
+    def set_schema(dbapi_connection, connection_record):
+        with dbapi_connection.cursor() as cursor:
+            cursor.execute('SET search_path TO test,public')
+
+
 class SqlMixin(object):
     """
     Write tables to a database specified by URL
     (TODO) with "upsert" based on primary key.
     """
-
+    ENGINE = None
     MIN_VARCHAR_LEN = 32
     MAX_VARCHAR_LEN = 255  # Arbitrary point at which we switch to TEXT; for postgres VARCHAR == TEXT anyhow
 
@@ -264,6 +272,7 @@ class SqlMixin(object):
         self.db_url = db_url
         self.collation = 'utf8_bin' if 'mysql' in db_url else None
         self.engine = engine or sqlalchemy.create_engine(db_url, poolclass=poolclass)
+        set_schema_listener(self.engine)
 
     def __enter__(self):
         self.connection = self.engine.connect()
@@ -434,7 +443,7 @@ class SqlTableWriter(SqlMixin, TableWriter):
 
     def least_upper_bound(self, source_type, dest_type):
         """
-        Returns the _coercion_ least uppper bound. 
+        Returns the _coercion_ least uppper bound.
         Mostly just promotes everything to string if it is not already.
         In fact, since this is only called when they are incompatible, it promotes to string right away.
         """
