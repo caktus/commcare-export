@@ -3,7 +3,7 @@ CommCare Export
 
 https://github.com/dimagi/commcare-export 
 
-[![Build Status](https://travis-ci.org/dimagi/commcare-export.png)](https://travis-ci.org/dimagi/commcare-export)
+[![Build Status](https://travis-ci.com/dimagi/commcare-export.png)](https://travis-ci.com/dimagi/commcare-export)
 [![Test coverage](https://coveralls.io/repos/dimagi/commcare-export/badge.png?branch=master)](https://coveralls.io/r/dimagi/commcare-export)
 [![PyPI version](https://badge.fury.io/py/commcare-export.svg)](https://badge.fury.io/py/commcare-export)
 
@@ -15,7 +15,7 @@ A command-line tool (and Python library) to generate customized exports from the
 Installation & Quick Start
 --------------------------
 
-0a\. Install Python and `pip`. This tool is [tested with Python 2.7, 3.6 and 3.7](https://travis-ci.org/dimagi/commcare-export).
+0a\. Install Python and `pip`. This tool is [tested with Python 2.7, 3.6 and 3.7](https://travis-ci.com/dimagi/commcare-export).
 
 0b\. Sign up for [CommCareHQ](https://www.commcarehq.org/) if you have not already.
 
@@ -387,6 +387,7 @@ List of builtin functions:
 | str2date                     | Convert string to date                                                         |                                  |
 | bool2int                     | Convert boolean to integer (0, 1)                                              |                                  |
 | str2num                      | Parse string as a number                                                       |                                  |
+| format-uuid                  | Parse a hex UUID, and format it into hyphen-separated groups                   |                                  |
 | substr                       | Returns substring indexed by [first arg, second arg), zero-indexed.            | substr(2, 5) of 'abcdef' = 'cde' |
 | selected-at                  | Returns the Nth word in a string. N is zero-indexed.                           | selected-at(3) - return 4th word |
 | selected                     | Returns True if the given word is in the value.                                | selected(fever)                  |
@@ -394,6 +395,8 @@ List of builtin functions:
 | json2str                     | Convert a JSON object to a string                                              |
 | template                     | Render a string template (not robust)                                          | template({} on {}, state, date)  |
 | attachment_url               | Convert an attachment name into it's download URL                              |                                  |
+| form_url                     | Output the URL to the form view on CommCare HQ                                 |                                  |
+| case_url                     | Output the URL to the case view on CommCare HQ                                 |                                  |
 
 Output Formats
 --------------
@@ -552,8 +555,11 @@ Postgresql
 ==========
 ```
 $ docker pull postgres:9.6
-$ docker run --name ccexport-postgres -p 5432:5432 -d postgres:9.6
+$ docker run --name ccexport-postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres -d postgres:9.6
+$ export POSTGRES_URL=postgresql://postgres:postgres@localhost/
 ```
+
+[Docker postgres image docs](https://hub.docker.com/_/postgres/)
 
 MySQL
 =====

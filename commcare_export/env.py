@@ -2,6 +2,7 @@ from __future__ import unicode_literals, print_function, absolute_import, divisi
 
 import hashlib
 import json
+import uuid
 from datetime import datetime
 import operator
 import pytz
@@ -355,6 +356,26 @@ def json2str(val):
         return
 
 
+@unwrap('val')
+def format_uuid(val):
+    """
+    Renders a hex UUID in hyphen-separated groups
+
+    >>> format_uuid('00a3e0194ce1458794c50971dee2de22')
+    '00a3e019-4ce1-4587-94c5-0971dee2de22'
+    >>> format_uuid(0x00a3e0194ce1458794c50971dee2de22)
+    '00a3e019-4ce1-4587-94c5-0971dee2de22'
+    """
+    if not val:
+        return None
+    if isinstance(val, int):
+        val = hex(val)
+    try:
+        return str(uuid.UUID(val))
+    except ValueError:
+        return None
+
+
 def join(*args):
     args = [unwrap_val(arg)for arg in args]
     try:
@@ -382,6 +403,27 @@ def attachment_url(val):
         Reference('$.domain'),
         Reference('$.id'),
         Literal(val)
+    )
+
+
+@unwrap('val')
+def form_url(val):
+    return _doc_url('form_data')
+
+
+@unwrap('val')
+def case_url(val):
+    return _doc_url('case_data')
+
+
+def _doc_url(url_path):
+    from commcare_export.minilinq import Apply, Reference, Literal
+    return Apply(
+        Reference('template'),
+        Literal('{}/a/{}/reports/'+ url_path + '/{}/'),
+        Reference('commcarehq_base_url'),
+        Reference('$.domain'),
+        Reference('$.id'),
     )
 
 
@@ -442,12 +484,15 @@ class BuiltInEnv(DictEnv):
             'str2num': str2num,
             'str2date': str2date,
             'json2str': json2str,
+            'format-uuid': format_uuid,
             'selected': selected,
             'selected-at': selected_at,
             'count-selected': count_selected,
             'join': join,
             'default': default,
             'template': template,
+            'form_url': form_url,
+            'case_url': case_url,
             'attachment_url': attachment_url,
             'filter_empty': _not_val,
             'or': _or,
